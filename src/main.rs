@@ -99,38 +99,71 @@ fn show_game_state(state: &GameState) -> String {
 }
 
 fn show_board(board: &Board) -> String {
-    let mut hline = String::new();
-    hline.push('+');
-    for _ in 0..board.size {
-        hline.push_str("------");
-        hline.push('+');
+    let mut top = String::new();
+    for i in 0..board.size {
+        if i == 0 {
+            top.push('┌');
+        } else {
+            top.push('┬');
+        }
+        top.push_str("──────");
     }
+    top.push('┐');
+
+    let mut mid = String::new();
+    for i in 0..board.size {
+        if i == 0 {
+            mid.push('├');
+        } else {
+            mid.push('┼');
+        }
+        mid.push_str("──────");
+    }
+    mid.push('┤');
+
+    let mut bot = String::new();
+    for i in 0..board.size {
+        if i == 0 {
+            bot.push('└');
+        } else {
+            bot.push('┴');
+        }
+        bot.push_str("──────");
+    }
+    bot.push('┘');
+
     let mut s = String::new();
-    s.push_str(&hline);
-    s.push('\n');
+    let mut first = true;
     for row in board.rows.iter() {
+        if first {
+            s.push_str(&top);
+            first = false;
+        } else {
+            s.push_str(&mid);
+        }
+        s.push('\n');
         s.push_str(&show_row(row));
         s.push('\n');
-        s.push_str(&hline);
-        s.push('\n');
     }
+    s.push_str(&bot);
+    s.push('\n');
     s
 }
 
 fn show_row(row: &Vec<Tile>) -> String {
     let n = row.len();
     let mut top = String::new();
-    top.push('|');
+    top.push('│');
     for _ in 0..n {
         top.push_str("      ");
-        top.push('|');
+        top.push('│');
     }
     let bot = top.clone();
     let mut mid = String::new();
-    mid.push('|');
+    mid.push('│');
     for tile in row.iter() {
         mid.push_str(&show_tile(tile));
-        mid.push('|');
+        mid.push('│');
     }
     [top, "\n".to_owned(), mid, "\n".to_owned(), bot].concat()
 }
