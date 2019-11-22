@@ -187,81 +187,6 @@ fn slide_row_right(row: Vec<Tile>) -> (Vec<Tile>, u32) {
     (merged_tiles, score)
 }
 
-#[test]
-fn test_slide_row_right() {
-    assert_eq!(
-        slide_row_right(vec![Tile::Blank, Tile::Blank, Tile::Blank, Tile::Blank]),
-        (vec![Tile::Blank, Tile::Blank, Tile::Blank, Tile::Blank], 0)
-    );
-    assert_eq!(
-        slide_row_right(vec![Tile::Blank, Tile::Number(2), Tile::Blank, Tile::Blank]),
-        (
-            vec![Tile::Blank, Tile::Blank, Tile::Blank, Tile::Number(2)],
-            0
-        )
-    );
-    assert_eq!(
-        slide_row_right(vec![
-            Tile::Blank,
-            Tile::Blank,
-            Tile::Number(2),
-            Tile::Number(4)
-        ]),
-        (
-            vec![Tile::Blank, Tile::Blank, Tile::Number(2), Tile::Number(4)],
-            0
-        )
-    );
-    assert_eq!(
-        slide_row_right(vec![
-            Tile::Blank,
-            Tile::Blank,
-            Tile::Number(2),
-            Tile::Number(2)
-        ]),
-        (
-            vec![Tile::Blank, Tile::Blank, Tile::Blank, Tile::Number(4)],
-            4
-        ),
-    );
-    assert_eq!(
-        slide_row_right(vec![
-            Tile::Blank,
-            Tile::Number(2),
-            Tile::Blank,
-            Tile::Number(2),
-        ]),
-        (
-            vec![Tile::Blank, Tile::Blank, Tile::Blank, Tile::Number(4)],
-            4
-        ),
-    );
-    assert_eq!(
-        slide_row_right(vec![
-            Tile::Number(4),
-            Tile::Blank,
-            Tile::Number(2),
-            Tile::Number(2),
-        ]),
-        (
-            vec![Tile::Blank, Tile::Blank, Tile::Number(4), Tile::Number(4)],
-            4
-        ),
-    );
-    assert_eq!(
-        slide_row_right(vec![
-            Tile::Number(4),
-            Tile::Number(4),
-            Tile::Number(2),
-            Tile::Number(2),
-        ]),
-        (
-            vec![Tile::Blank, Tile::Blank, Tile::Number(8), Tile::Number(4)],
-            12
-        ),
-    );
-}
-
 fn merge_numbers_right(mut numbers: Vec<u32>) -> (Vec<u32>, u32) {
     let mut merged_numbers = Vec::new();
     let mut score = 0;
@@ -279,20 +204,6 @@ fn merge_numbers_right(mut numbers: Vec<u32>) -> (Vec<u32>, u32) {
         }
     }
     (merged_numbers, score)
-}
-
-#[test]
-fn test_merge_files() {
-    assert_eq!(merge_tiles(&mut vec![]), (vec![], 0));
-    assert_eq!(merge_tiles(&mut vec![1]), (vec![1], 0));
-    assert_eq!(merge_tiles(&mut vec![1, 2]), (vec![2, 1], 0));
-    assert_eq!(merge_tiles(&mut vec![1, 1]), (vec![2], 2));
-    assert_eq!(merge_tiles(&mut vec![1, 2, 3]), (vec![3, 2, 1], 0));
-    assert_eq!(merge_tiles(&mut vec![1, 2, 2]), (vec![4, 1], 4));
-    assert_eq!(merge_tiles(&mut vec![2, 2, 2]), (vec![4, 2], 4));
-    assert_eq!(merge_tiles(&mut vec![2, 1, 2]), (vec![2, 1, 2], 0));
-    assert_eq!(merge_tiles(&mut vec![1, 1, 2, 2]), (vec![4, 2], 6));
-    assert_eq!(merge_tiles(&mut vec![1, 2, 2, 3]), (vec![3, 4, 1], 4));
 }
 
 fn slide_left(state: GameState) -> GameState {
