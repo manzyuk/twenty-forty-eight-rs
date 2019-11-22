@@ -99,38 +99,9 @@ fn show_game_state(state: &GameState) -> String {
 }
 
 fn show_board(board: &Board) -> String {
-    let mut top = String::new();
-    for i in 0..board.size {
-        if i == 0 {
-            top.push('┌');
-        } else {
-            top.push('┬');
-        }
-        top.push_str("──────");
-    }
-    top.push('┐');
-
-    let mut mid = String::new();
-    for i in 0..board.size {
-        if i == 0 {
-            mid.push('├');
-        } else {
-            mid.push('┼');
-        }
-        mid.push_str("──────");
-    }
-    mid.push('┤');
-
-    let mut bot = String::new();
-    for i in 0..board.size {
-        if i == 0 {
-            bot.push('└');
-        } else {
-            bot.push('┴');
-        }
-        bot.push_str("──────");
-    }
-    bot.push('┘');
+    let top = show_line('┌', '┬', '┐', vec!["──────".to_owned(); board.size]);
+    let mid = show_line('├', '┼', '┤', vec!["──────".to_owned(); board.size]);
+    let bot = show_line('└', '┴', '┘', vec!["──────".to_owned(); board.size]);
 
     let mut s = String::new();
     let mut first = true;
@@ -152,20 +123,22 @@ fn show_board(board: &Board) -> String {
 
 fn show_row(row: &Vec<Tile>) -> String {
     let n = row.len();
-    let mut top = String::new();
-    top.push('│');
-    for _ in 0..n {
-        top.push_str("      ");
-        top.push('│');
-    }
-    let bot = top.clone();
-    let mut mid = String::new();
-    mid.push('│');
-    for tile in row.iter() {
-        mid.push_str(&show_tile(tile));
-        mid.push('│');
-    }
-    [top, "\n".to_owned(), mid, "\n".to_owned(), bot].concat()
+    let top = show_line('│', '│', '│', vec!["      ".to_owned(); n]);
+    let bot = show_line('│', '│', '│', vec!["      ".to_owned(); n]);
+    let mid = show_line(
+        '│',
+        '│',
+        '│',
+        row.into_iter().map(|tile| show_tile(tile)).collect(),
+    );
+
+    let mut s = String::new();
+    s.push_str(&top);
+    s.push('\n');
+    s.push_str(&mid);
+    s.push('\n');
+    s.push_str(&bot);
+    s
 }
 
 fn show_tile(tile: &Tile) -> String {
@@ -173,6 +146,22 @@ fn show_tile(tile: &Tile) -> String {
         Tile::Blank => "      ".to_owned(),
         Tile::Number(k) => format!(" {:4} ", k),
     }
+}
+
+fn show_line(left_delim: char, sep: char, right_delim: char, pieces: Vec<String>) -> String {
+    let mut line = String::new();
+    let mut first = true;
+    for piece in pieces.into_iter() {
+        if first {
+            line.push(left_delim);
+            first = false;
+        } else {
+            line.push(sep);
+        }
+        line.push_str(&piece);
+    }
+    line.push(right_delim);
+    line
 }
 
 fn empty_board(size: usize) -> Board {
