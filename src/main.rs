@@ -1,32 +1,32 @@
 use cursive::event::Key;
 use cursive::views::TextView;
 use cursive::Cursive;
-use std::sync::{Arc, Mutex};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 fn main() {
     let mut siv = Cursive::default();
     let state = initial_game_state();
-    let state1 = state.clone();
-    let state2 = state.clone();
-    let mutex = Arc::new(Mutex::new(state1));
-    siv.add_global_callback('q', |s| s.quit());
-    siv.add_global_callback(Key::Left, make_callback(&mutex, slide_left));
-    siv.add_global_callback(Key::Right, make_callback(&mutex, slide_right));
-    siv.add_global_callback(Key::Up, make_callback(&mutex, slide_up));
-    siv.add_global_callback(Key::Down, make_callback(&mutex, slide_down));
 
-    siv.add_layer(TextView::new(show_game_state(&state2)));
+    siv.add_layer(TextView::new(show_game_state(&state)));
+
+    let state_ref = Rc::new(RefCell::new(state));
+    siv.add_global_callback('q', |s| s.quit());
+    siv.add_global_callback(Key::Left, make_callback(&state_ref, slide_left));
+    siv.add_global_callback(Key::Right, make_callback(&state_ref, slide_right));
+    siv.add_global_callback(Key::Up, make_callback(&state_ref, slide_up));
+    siv.add_global_callback(Key::Down, make_callback(&state_ref, slide_down));
 
     siv.run();
 }
 
-fn make_callback<F>(state: &Arc<Mutex<GameState>>, f: F) -> impl FnMut(&mut Cursive) + 'static
+fn make_callback<F>(state_ref: &Rc<RefCell<GameState>>, f: F) -> impl FnMut(&mut Cursive) + 'static
 where
     F: Fn(GameState) -> GameState + 'static,
 {
-    let state = Arc::clone(&state);
+    let state_ref = Rc::clone(&state_ref);
     move |s| {
-        let mut state = state.lock().unwrap();
+        let mut state = state_ref.borrow_mut();
         *state = add_random_tile(f((*state).clone()));
         s.pop_layer();
         s.add_layer(TextView::new(show_game_state(&*state)));
