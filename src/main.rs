@@ -1,23 +1,20 @@
 use cursive::event::Key;
-use cursive::views::TextView;
+use cursive::views::{Dialog, TextView};
 use cursive::Cursive;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 fn main() {
-    play(Cursive::default());
+    play(&mut Cursive::default());
 }
 
-fn play(siv: Cursive) {
+fn play(siv: &mut Cursive) {
     let state = initial_game_state();
-    r#loop(siv, state);
-}
 
-fn r#loop(mut siv: Cursive, state: GameState) {
     siv.add_layer(TextView::new(show_game_state(&state)));
 
     let state_ref = Rc::new(RefCell::new(state));
-    siv.add_global_callback('q', |s| s.quit());
+    siv.add_global_callback(Key::Esc, |s| s.quit());
     siv.add_global_callback(Key::Up, make_callback(&state_ref, slide_up));
     siv.add_global_callback(Key::Down, make_callback(&state_ref, slide_down));
     siv.add_global_callback(Key::Left, make_callback(&state_ref, slide_left));
@@ -36,7 +33,25 @@ where
         *state = add_random_tile(f((*state).clone()));
         s.pop_layer();
         s.add_layer(TextView::new(show_game_state(&*state)));
+        if is_complete(&*state) {
+            end_game_or_replay(s, "You win!");
+        } else if is_stuck(&*state) {
+            end_game_or_replay(s, "Game over!");
+        }
     }
+}
+
+fn end_game_or_replay(siv: &mut Cursive, status: &str) {
+    siv.add_layer(
+        Dialog::text("Try again?")
+            .title(status)
+            .button("Yes", |s| {
+                s.pop_layer();
+                s.pop_layer();
+                play(s);
+            })
+            .button("No", |s| s.quit()),
+    );
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -45,13 +60,13 @@ enum Tile {
     Number(u32),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Board {
     rows: Vec<Vec<Tile>>,
     size: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct GameState {
     board: Board,
     score: u32,
@@ -365,6 +380,9 @@ fn blank_tile_positions(board: &Board) -> Vec<(usize, usize)> {
 }
 
 fn choose<T>(xs: &Vec<T>) -> Option<&T> {
+    if xs.len() == 0 {
+        return None;
+    }
     use rand::Rng;
     let mut rng = rand::thread_rng();
     let i = rng.gen_range(0, xs.len());
@@ -397,4 +415,19 @@ fn initial_game_state() -> GameState {
         board: empty_board(4),
         score: 0,
     }))
+}
+
+fn is_complete(state: &GameState) -> bool {
+    let rows = &state.board.rows;
+    rows.into_iter()
+        .any(|row| row.into_iter().any(|&tile| tile == Tile::Number(2048)))
+}
+
+fn is_stuck(state: &GameState) -> bool {
+    let slides: Vec<fn(GameState) -> GameState> =
+        vec![slide_up, slide_down, slide_left, slide_right];
+    slides
+        .into_iter()
+        .map(|slide| slide(state.clone()))
+        .all(|new_state| new_state == *state)
 }
