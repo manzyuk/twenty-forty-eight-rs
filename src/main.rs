@@ -5,17 +5,23 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 fn main() {
-    let mut siv = Cursive::default();
-    let state = initial_game_state();
+    play(Cursive::default());
+}
 
+fn play(siv: Cursive) {
+    let state = initial_game_state();
+    r#loop(siv, state);
+}
+
+fn r#loop(mut siv: Cursive, state: GameState) {
     siv.add_layer(TextView::new(show_game_state(&state)));
 
     let state_ref = Rc::new(RefCell::new(state));
     siv.add_global_callback('q', |s| s.quit());
-    siv.add_global_callback(Key::Left, make_callback(&state_ref, slide_left));
-    siv.add_global_callback(Key::Right, make_callback(&state_ref, slide_right));
     siv.add_global_callback(Key::Up, make_callback(&state_ref, slide_up));
     siv.add_global_callback(Key::Down, make_callback(&state_ref, slide_down));
+    siv.add_global_callback(Key::Left, make_callback(&state_ref, slide_left));
+    siv.add_global_callback(Key::Right, make_callback(&state_ref, slide_right));
 
     siv.run();
 }
