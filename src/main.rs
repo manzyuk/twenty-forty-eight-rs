@@ -340,20 +340,6 @@ fn transpose(rows: Vec<Vec<Tile>>) -> Vec<Vec<Tile>> {
     result
 }
 
-#[test]
-fn test_transpose() {
-    assert_eq!(
-        transpose(vec![
-            vec![Tile::Number(1), Tile::Number(2)],
-            vec![Tile::Number(3), Tile::Number(4)],
-        ]),
-        vec![
-            vec![Tile::Number(1), Tile::Number(3)],
-            vec![Tile::Number(2), Tile::Number(4)],
-        ],
-    );
-}
-
 fn blank_tile_positions(board: &Board) -> Vec<(usize, usize)> {
     let mut positions = Vec::new();
     for (row_index, row) in board.rows.iter().enumerate() {
