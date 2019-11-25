@@ -1,4 +1,9 @@
 use cursive::event::Key;
+use cursive::theme::Color;
+use cursive::theme::ColorStyle;
+use cursive::theme::ColorType;
+use cursive::theme::Style;
+use cursive::utils::markup::StyledString;
 use cursive::views::{Dialog, TextView};
 use cursive::Cursive;
 use std::cell::RefCell;
@@ -90,77 +95,126 @@ impl Clone for GameState {
     }
 }
 
-fn show_game_state(state: &GameState) -> String {
-    [
-        show_board(&state.board),
-        format!("Score: {:4}", state.score),
-    ]
-    .concat()
+const BORDER_COLOR: Color = Color::RgbLowRes(2, 2, 2);
+
+fn color_string(s: String, fc: Color, bc: Color) -> StyledString {
+    StyledString::styled(
+        s,
+        Style::from(ColorStyle::new(ColorType::from(fc), ColorType::from(bc))),
+    )
 }
 
-fn show_board(board: &Board) -> String {
-    let top = show_line('┌', '┬', '┐', vec!["──────".to_owned(); board.size]);
-    let mid = show_line('├', '┼', '┤', vec!["──────".to_owned(); board.size]);
-    let bot = show_line('└', '┴', '┘', vec!["──────".to_owned(); board.size]);
-
-    let mut s = String::new();
-    let mut first = true;
-    for row in board.rows.iter() {
-        if first {
-            s.push_str(&top);
-            first = false;
-        } else {
-            s.push_str(&mid);
-        }
-        s.push('\n');
-        s.push_str(&show_row(row));
-        s.push('\n');
-    }
-    s.push_str(&bot);
-    s.push('\n');
+fn show_game_state(state: &GameState) -> StyledString {
+    let mut s = StyledString::new();
+    s.append(show_board(&state.board));
+    s.append_plain(format!("Score: {:4}", state.score));
     s
 }
 
-fn show_row(row: &Vec<Tile>) -> String {
-    let n = row.len();
-    let top = show_line('│', '│', '│', vec!["      ".to_owned(); n]);
-    let bot = show_line('│', '│', '│', vec!["      ".to_owned(); n]);
-    let mid = show_line(
-        '│',
-        '│',
-        '│',
-        row.into_iter().map(|tile| show_tile(tile)).collect(),
+fn show_board(board: &Board) -> StyledString {
+    let line = join(
+        color_string(" ".to_owned(), BORDER_COLOR, BORDER_COLOR),
+        vec![color_string("──────".to_owned(), BORDER_COLOR, BORDER_COLOR); board.size],
     );
 
-    let mut s = String::new();
-    s.push_str(&top);
-    s.push('\n');
-    s.push_str(&mid);
-    s.push('\n');
-    s.push_str(&bot);
+    let mut s = StyledString::new();
+    let mut first = true;
+    s.append(line.clone());
+    for row in board.rows.iter() {
+        if !first {
+            s.append(line.clone());
+        }
+        s.append_plain("\n");
+        s.append(show_row(row));
+        s.append_plain("\n");
+        first = false;
+    }
+    s.append(line.clone());
+    s.append_plain("\n");
     s
 }
 
-fn show_tile(tile: &Tile) -> String {
+fn show_row(row: &Vec<Tile>) -> StyledString {
+    let colors: Vec<Color> = row.iter().map(|tile| tile_bc(tile)).collect();
+    let top = join(
+        color_string(" ".to_owned(), BORDER_COLOR, BORDER_COLOR),
+        colors
+            .into_iter()
+            .map(|color| color_string("      ".to_owned(), color, color))
+            .collect(),
+    );
+    let mid = join(
+        color_string(" ".to_owned(), BORDER_COLOR, BORDER_COLOR),
+        row.into_iter().map(|tile| show_tile(tile)).collect(),
+    );
+    let bot = top.clone();
+
+    let mut s = StyledString::new();
+    s.append(top);
+    s.append_plain("\n");
+    s.append(mid);
+    s.append_plain("\n");
+    s.append(bot);
+    s
+}
+
+fn show_tile(tile: &Tile) -> StyledString {
+    color_string(
+        match *tile {
+            Tile::Blank => "      ".to_owned(),
+            Tile::Number(k) => format!(" {:4} ", k),
+        },
+        tile_fc(tile),
+        tile_bc(tile),
+    )
+}
+
+fn tile_fc(tile: &Tile) -> Color {
     match *tile {
-        Tile::Blank => "      ".to_owned(),
-        Tile::Number(k) => format!(" {:4} ", k),
+        Tile::Blank => Color::RgbLowRes(3, 3, 3),
+        Tile::Number(2) | Tile::Number(4) | Tile::Number(8) | Tile::Number(16) => {
+            Color::RgbLowRes(0, 0, 0)
+        }
+        Tile::Number(32)
+        | Tile::Number(64)
+        | Tile::Number(128)
+        | Tile::Number(256)
+        | Tile::Number(512)
+        | Tile::Number(1024)
+        | Tile::Number(2048)
+        | Tile::Number(_) => Color::RgbLowRes(5, 5, 5),
     }
 }
 
-fn show_line(left_delim: char, sep: char, right_delim: char, pieces: Vec<String>) -> String {
-    let mut line = String::new();
-    let mut first = true;
-    for piece in pieces.into_iter() {
-        if first {
-            line.push(left_delim);
-            first = false;
-        } else {
-            line.push(sep);
-        }
-        line.push_str(&piece);
+fn tile_bc(tile: &Tile) -> Color {
+    match *tile {
+        Tile::Blank => Color::RgbLowRes(3, 3, 3),
+        Tile::Number(2) => Color::RgbLowRes(5, 5, 5),
+        Tile::Number(4) => Color::RgbLowRes(5, 5, 4),
+        Tile::Number(8) => Color::RgbLowRes(5, 4, 4),
+        Tile::Number(16) => Color::RgbLowRes(5, 4, 3),
+        Tile::Number(32) => Color::RgbLowRes(5, 3, 3),
+        Tile::Number(64) => Color::RgbLowRes(5, 3, 2),
+        Tile::Number(128) => Color::RgbLowRes(5, 2, 2),
+        Tile::Number(256) => Color::RgbLowRes(5, 2, 1),
+        Tile::Number(512) => Color::RgbLowRes(5, 1, 1),
+        Tile::Number(1024) => Color::RgbLowRes(5, 1, 0),
+        Tile::Number(_) => Color::RgbLowRes(5, 0, 0),
     }
-    line.push(right_delim);
+}
+
+fn join(sep: StyledString, pieces: Vec<StyledString>) -> StyledString {
+    let mut line = StyledString::new();
+    let mut first = true;
+    line.append(sep.clone());
+    for piece in pieces.into_iter() {
+        if !first {
+            line.append(sep.clone());
+        }
+        line.append(piece);
+        first = false;
+    }
+    line.append(sep.clone());
     line
 }
 
